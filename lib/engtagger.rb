@@ -61,6 +61,8 @@ class EngTagger
   ADJ   = get_ext('jj[rs]*')
   PART  = get_ext('vbn')
   NN    = get_ext('nn[sp]*')
+  VB    = get_ext('vb[dgnpz]*')  #DLMS add
+  MD    = get_ext('md')   #DLMS add
   NNP   = get_ext('nnp')
   PREP  = get_ext('in')
   DET   = get_ext('det')
@@ -321,7 +323,49 @@ class EngTagger
     end
     return ret
   end
-  
+
+
+  # Given a POS-tagged text, this method returns all verbs and their      #DLMS add
+  # occurrence frequencies.
+  def get_verbs(tagged)
+    return nil unless valid_text(tagged)
+    trimmed = tagged.scan(VB).map do |n|
+      strip_tags(n)
+    end
+    trimmed += tagged.scan(MD).map do |n|                      #  <-  right?
+      strip_tags(n)
+    end
+    ret = Hash.new(0)
+    trimmed.each do |n|
+      n = stem(n)
+      next unless n.length < 100  # sanity check on word length
+      ret[n] += 1 unless n =~ /\A\s*\z/
+    end
+    return ret
+  end
+
+
+  # Given a POS-tagged text, this method returns all adjectives and their      #DLMS add
+  # occurrence frequencies.
+  def get_adjectives(tagged)
+    return nil unless valid_text(tagged)
+    trimmed = tagged.scan(ADJ).map do |n|
+      strip_tags(n)
+    end
+#    trimmed += tagged.scan(NUM).map do |n|                      #    CD
+#      strip_tags(n)
+#    end
+    ret = Hash.new(0)
+    trimmed.each do |n|
+      n = stem(n)
+      next unless n.length < 100  # sanity check on word length
+      ret[n] += 1 unless n =~ /\A\s*\z/
+    end
+    return ret
+  end
+
+
+
   # Given a POS-tagged text, this method returns only the maximal noun phrases.
   # May be called directly, but is also used by get_noun_phrases
   def get_max_noun_phrases(tagged)
@@ -676,7 +720,7 @@ class EngTagger
     /xo #/
     return regex
   end  
-  
+
   # Load the 2-grams into a hash from YAML data: This is a naive (but fast) 
   # YAML data parser. It will load a YAML document with a collection of key: 
   # value entries ( {pos tag}: {probability} ) mapped onto single keys ( {tag} ). 
